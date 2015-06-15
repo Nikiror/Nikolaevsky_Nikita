@@ -1,0 +1,41 @@
+int MaxElem(int a, int b){
+    pNode l, m, r;
+    Split (T, l, r, A);
+    Split (r, m, r, B-A);
+    return m->Max_c;
+}
+void Push_add(pNode T){
+    	if (T == NULL) return;
+    	T->cost += T->AddValue;    
+			if (T->Left != NULL) T->Left-> AddValue += T-> AddValue;
+			if (T->Right != NULL) T->Right-> AddValue += T-> AddValue;   
+			T-> AddValue = 0;
+}
+void Addvalue (pNode &T, int A, int B, double add){
+    	pNode l, m, r;
+			Split(T, l, r, A);
+    	Split(T, m, r, B - A);
+    	m-> AddValue += add; 
+			Merge(T, l, m)
+    	Merge(T, T, r);
+}
+void Push_rev(pNode T){
+    if (T == NULL) return;
+    if (T->Reverse==0) return;
+    swap(T->left,T->right);
+    T->Reverse = 0;
+    if (T->left != NULL) T->left->Reverse^= 1;
+    if (T->right != NULL) T->right->Reverse ^= 1;
+}
+void Reverse(pNode &T, int A, int B){
+	pNode l, m, r;
+ 	Split (T, A, l, r);
+  Split (r, m, r, B - A);
+  m->Reverse ^= 1;
+	Merge(T, l, m)
+  Merge(T, T, r);
+}
+void ShiftLeft (pNode &T,int K){
+   pNode l, r; Split(T, K, l, r);
+   Merge(r, l);
+}
