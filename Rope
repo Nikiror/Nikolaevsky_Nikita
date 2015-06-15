@@ -1,0 +1,240 @@
+# define _CRT_SECURE_NO_WARNINGS
+#include <functional>
+# include <algorithm>
+# include <iostream>
+# include <string.h>
+# include <utility>
+# include <cstring>
+# include <sstream>
+# include <iomanip>
+# include <bitset>
+# include <string>
+# include <cstdio>
+# include <vector>
+# include <deque>
+# include <queue>
+# include <stack>
+# include <cmath>
+# include <ctime>
+# include <list>
+# include <map>
+# include <set>
+//#pragma comment (linker, "/STACK:17000000")
+
+#define mp make_pair
+#define pb push_back
+#define all(v) v.begin(),v.end()
+
+using namespace std;
+
+typedef long long ll;
+typedef pair<int, int > P;
+typedef double db;
+
+const db eps = 1e-18, pi = acos(-1.0);
+const ll inf = 1e18;
+const int MAXN = 1e6;
+template < typename SomeValueType > class Rope{
+public:
+	Rope(){}
+	int size1;
+
+	class RopeNode{
+	public:
+		int cnt, len;
+		RopeNode * left, *right;
+		SomeValueType *text;
+
+		RopeNode(int Prior, int Cnt = 0) {
+			prior = Prior;
+			left = NULL;
+			right = NULL;
+			cnt = Cnt;
+			len = 0;
+		}
+		RopeNode() {
+			left = NULL;
+			right = NULL;
+			cnt = 0;
+		}
+		int WeightSum(RopeNode * a){
+			if (a)
+				return a->cnt;
+			else
+				return 0;
+		}
+
+		void UpdateWeights(RopeNode * t) {
+			if (t)
+				t->cnt = t->len + WeightSum(t->left);
+		}
+		void Merge(RopeNode * & t, RopeNode * l, RopeNode * r) {
+			if (!l || !r){
+				t = l ? l : r;
+				return;
+			}
+			int L = WeightSum(l), R = WeightSum(r), rang = rand() % (L + R);
+			if (rang > R){
+				Merge(l->right, l->right, r);
+				t = l;
+			}
+			else{
+				Merge(r->left, l, r->left);
+				t = r;
+			}
+			UpdateWeights(t);
+		}
+
+		void Split(RopeNode*  t, RopeNode* & l, RopeNode* & r, int key, int add = 0) {
+			if (!t){
+				l = r = NULL;
+				return;
+			}
+			int newKey = WeightSum(t->left) + t->len + add;
+			if (key <= newKey){
+				if (key > newKey - t->len){
+					char* bufferleft = new char[t->len - (newKey - key) + 1];
+					memcpy(bufferleft, t->text, t->len - (newKey - key));
+					char* bufferright = new char[newKey - key + 1];
+					memcpy(bufferright, t->text + (t->len - (newKey - key)), newKey - key);
+
+					// update vertex
+					t->text = bufferleft;
+					t->len = t->len - (newKey - key);
+					t->cnt = t->len;
+
+					// create new vertex
+					pNode newvertex = new RopeNode;
+					newvertex->text = bufferright;
+					newvertex->len = newvertex->cnt = newKey - key;
+
+					Merge(t->right, newvertex, t->right);
+					UpdateWeights(t->right);
+					UpdateWeights(t);
+					Split(t->right, t->right, r, key, add + t->len + WeightSum(t->left));
+					l = t;
+				}
+				else{
+					Split(t->left, l, t->left, key, add);
+					r = t;
+				}
+			}
+			else{
+				Split(t->right, t->right, r, key, add + t->len + WeightSum(t->left));
+				l = t;
+			}
+			UpdateWeights(t);
+		}
+
+
+		void insert(RopeNode*  & t, int pos, char *a) {
+			pNode newleft = new Rope::RopeNode;
+			pNode newright = new Rope::RopeNode;
+			Split(t, newleft, newright, pos);
+			int sz = strlen(a);
+
+			//create new vertex for insert
+			SomeValueType* buffer = new SomeValueType[sz + 1];
+			memcpy(buffer, a, strlen(a));
+			pNode newvertex = new Rope::RopeNode;
+			newvertex->text = buffer;
+			newvertex->len = newvertex->cnt = sz;
+
+			//merge
+			Merge(newleft, newleft, newvertex);
+			Merge(t, newleft, newright);
+
+		}
+
+		void output(RopeNode*  & t){
+			if (t == NULL) return;
+			output(t->left);
+			for (int i = 0; i < t->len; i++)
+				cout << t->text[i];
+			output(t->right);
+
+		}
+		void erase(RopeNode*  & t, int key) {
+			pNode newleft = new RopeNode;
+			pNode newright = new RopeNode;
+			pNode newrightw = new RopeNode;
+			Split(t, newleft, newright, key);
+			Split(newright, newrightw, newright, 1);
+			Merge(t, newleft, newright);
+		}
+		SomeValueType at(RopeNode*  & t, int i, int add){
+			int newKey = WeightSum(t->left) + t->len + add;
+			if (i > newKey)
+				return at(t->right, i, add + t->len + WeightSum(t->right));
+			else
+			{
+				if (i < newKey - t->len){
+					return at(t->left, i, add);
+				}
+				else
+				{
+
+					return t->text[i - newKey + t->len];
+				}
+			}
+		}
+
+	};
+
+	typedef RopeNode* pNode;
+	pNode root;
+	void insert(int poz, SomeValueType* a){
+		size1 += strlen(a);
+		root->insert(root, poz, a);
+	}
+	void erase(int poz, int kol){
+		size1 -= kol;
+		root->erase(root, poz);
+	}
+	void concat(SomeValueType* a){
+		pNode t = new RopeNode;
+		t->text = a;
+		t->len = strlen(a);
+		t->cnt = t->len;
+		root->Merge(root, root, t);
+	}
+	void output(){
+		root->output(root);
+	}
+	Rope* substr(int pos, int kol){
+		pNode l, r, m;
+		root->Split(root, l, r, pos);
+		root->Split(r, m, r, kol);
+		root->Merge(root, l, r);
+		Rope* t = new Rope;
+		t->root = m;
+		t->size1 = kol;
+		return t;
+
+	}
+	SomeValueType at(int i){
+		SomeValueType y = root->at(root, i, 0);
+		return y;
+	}
+	int size(){
+		return size1;
+	}
+	Rope(const char* s) :Rope(string(s)){
+	}
+	Rope(const string &s){
+		SomeValueType* buffer = new SomeValueType[s.length() + 1];
+		strncpy(buffer, s.c_str(), s.length() + 1);
+		root = new RopeNode;
+		root->text = buffer;
+		root->cnt = s.length();
+		root->len = s.length();
+		this->size1 += root->len;
+	}
+
+};
+
+int main() {
+	Rope<char> n = "nikiror";
+	n.insert(2, "34");
+	n.output();
+}
